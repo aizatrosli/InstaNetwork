@@ -18,7 +18,7 @@ def customapiloader(customapi):
     for func in dir(customapi):
         if "__" not in str(func):
             print("[InstaNetwork] Custom loader api for {0}.".format(func))
-            setattr(InstagramAPI, str(func), func)
+            setattr(InstagramAPI, func, getattr(customapi,func))
     return InstagramAPI
 
 

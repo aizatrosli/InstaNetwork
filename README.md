@@ -1,7 +1,7 @@
 # InstaNetwork
 Visualize instagram mesh network.
 
-Leveraging https://github.com/LevPasha/Instagram-API-python api with networkx
+Leveraging https://github.com/LevPasha/Instagram-API-python library with networkx
 
 ## Objective
 - to understand how social network analysis (SNA) works with networkx.
@@ -26,4 +26,4 @@ api = start(username, password)
 
 
 
-### This is my sem break project. Thus, i didnt plan to maintain it :P
+##### This is my sem break project. Thus, i didnt plan to maintain it :P

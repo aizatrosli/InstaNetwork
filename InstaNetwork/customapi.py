@@ -1,14 +1,13 @@
-import logging
-import json
-
-
 def login_challenge(self, checkpoint_url):
     '''
     This is workaround for challenge login.
+    source : https://github.com/LevPasha/Instagram-API-python/issues/718
     :param self:
     :param checkpoint_url:
     :return:
     '''
+    import logging
+    import json
     BASE_URL = 'https://www.instagram.com/'
     self.s.headers.update({'Referer': BASE_URL})
     req = self.s.get(BASE_URL[:-1] + checkpoint_url)
@@ -43,5 +42,25 @@ def getUsernameId(self, username):
     :param username: username string
     :return: username_id value
     '''
-    return username
+    if self.SendRequest('users/' + str(username) + '/usernameinfo/'):
+        return self.LastJson['user']['pk']
+    else:
+        return False
+
+
+def getHighLevelNodeProfile(self, user):
+    '''
+    get high level detail of user
+    :param self:
+    :param user: usernameid or username
+    :return: pk,username,is_private,follower_count,following_count
+    '''
+    if str(user).isdigit() and self.SendRequest('users/' + str(user) + '/info/'):
+        return self.LastJson
+    elif self.SendRequest('users/' + str(user) + '/usernameinfo/'):
+        return self.LastJson
+
+
+
+
 
