@@ -10,6 +10,14 @@ Leveraging https://github.com/LevPasha/Instagram-API-python api with networkx
 ## Requirements
 pip install networkx InstagramApi
 
+## How to use
+
+```python
+from InstaNetwork.core import start
+api = start(username, password)
+```
+
+
 ## TODO
 - [ ] core module - WIP
 - [ ] networkx implementation

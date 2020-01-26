@@ -6,40 +6,20 @@ import networkx
 import pandas as pd
 import numpy as np
 from InstagramAPI import InstagramAPI
+from InstaNetwork import customapi
 
 
-def login_challenge(self, checkpoint_url):
+def customapiloader(customapi):
     '''
-    This is workaround for challenge login.
-    :param self:
-    :param checkpoint_url:
+    WA to apply custom api function
+    :param customapi:
     :return:
     '''
-    BASE_URL = 'https://www.instagram.com/'
-    self.s.headers.update({'Referer': BASE_URL})
-    req = self.s.get(BASE_URL[:-1] + checkpoint_url)
-    self.s.headers.update({'X-CSRFToken': req.cookies['csrftoken'], 'X-Instagram-AJAX': '1'})
-    self.s.headers.update({'Referer': BASE_URL[:-1] + checkpoint_url})
-    mode = int(input('Choose a challenge mode (0 - SMS, 1 - Email): '))
-    challenge_data = {'choice': mode}
-    challenge = self.s.post(BASE_URL[:-1] + checkpoint_url, data=challenge_data, allow_redirects=True)
-    self.s.headers.update({'X-CSRFToken': challenge.cookies['csrftoken'], 'X-Instagram-AJAX': '1'})
-
-    code = input('Enter code received: ').strip()
-    code_data = {'security_code': code}
-    code = self.s.post(BASE_URL[:-1] + checkpoint_url, data=code_data, allow_redirects=True)
-    self.s.headers.update({'X-CSRFToken': code.cookies['csrftoken']})
-    self.cookies = code.cookies
-    code_text = json.loads(code.text)
-    if code_text.get('status') == 'ok':
-        self.authenticated = True
-        self.logged_in = True
-    elif 'errors' in code.text:
-        for count, error in enumerate(code_text['challenge']['errors']):
-            count += 1
-            logging.error('Session error %(count)s: "%(error)s"' % locals())
-    else:
-        logging.error(json.dumps(code_text))
+    for func in dir(customapi):
+        if "__" not in str(func):
+            print("[InstaNetwork] Custom loader api for {0}.".format(func))
+            setattr(InstagramAPI, str(func), func)
+    return InstagramAPI
 
 
 def start(username=None, password=None):
@@ -49,7 +29,7 @@ def start(username=None, password=None):
     :param password:
     :return: api
     '''
-    InstagramAPI.ver = login_challenge
+    InstagramAPI = customapiloader(customapi)
     api = None
     if username is None and password is None:
         with open(r'..\credential.json') as fp:
@@ -60,7 +40,7 @@ def start(username=None, password=None):
     api.login()
     try:
         link = api.LastJson['challenge']['api_path']
-        api.ver(link)
+        api.login_challenge(link)
         api.login()
     except Exception as e:
         if api.LastResponse.ok:
@@ -71,6 +51,12 @@ def start(username=None, password=None):
 
 
 def getfulluserfeed(api, user_id):
+    '''
+    WARNING!! it will consume alot of requests!
+    :param api:
+    :param user_id:
+    :return:
+    '''
     userfeeddf = pd.DataFrame()
     next_max_id = True
     while next_max_id:
@@ -78,22 +64,27 @@ def getfulluserfeed(api, user_id):
             next_max_id = ''
         _ = api.getUserFeed(user_id, maxid=next_max_id)
         feeddf = pd.read_json(json.dumps(api.LastJson['items']))
-        userfeeddf = pd.concat([userfeeddf,feeddf], ignore_index=True)
+        userfeeddf = pd.concat([userfeeddf, feeddf], ignore_index=True)
         next_max_id = api.LastJson.get('next_max_id', '')
     return userfeeddf
 
 
 def targetcommentmedia(api, user_id, target_id):
     '''
+    TODO : add multithread ops
     api.getUserFeed(user_id)
     userdf = pd.read_json(json.dumps(api.LastJson['items']))
     print(api.LastJson.get('next_max_id', ''))
+    :param api:
+    :param user_id:
+    :param target_id:
+    :return:
     '''
     userdf = getfulluserfeed(api, user_id)
     bulkdf = pd.DataFrame()
     if len(userdf) > 0:
-        print(len(userdf),len(userdf['pk'].tolist()))
-        for media,cap in zip(userdf['pk'].tolist(),userdf['caption'].tolist()):
+        print(len(userdf), len(userdf['pk'].tolist()))
+        for media, cap in zip(userdf['pk'].tolist(), userdf['caption'].tolist()):
             max_id = ''
             api.getMediaComments(str(media), max_id=max_id)
             time.sleep(5)
